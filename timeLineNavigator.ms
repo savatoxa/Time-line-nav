@@ -108,6 +108,7 @@ rollout win1 "Time line navigator" width:200 height:305
 	on ddl1 selected i do
 	(
 		rangeWork = ddl1.items[i]
+		edt1.text = rangeWork
 	)
 	on btn1 pressed do
 	(
@@ -141,7 +142,7 @@ rollout win1 "Time line navigator" width:200 height:305
 			createTagsByRangeName newRange
 			rangeWork = newRange
 			newRange = ""
-			edt1.text = newRange
+			edt1.text = rangeWork
 			createRanges()
 			ddl1.items = (for range in ranges collect range)
 		)
@@ -164,7 +165,7 @@ rollout win1 "Time line navigator" width:200 height:305
 			rangeWork = newRange
 			ddl1.items = (for range in ranges collect range)
 			newRange = ""
-			edt1.text = newRange
+			edt1.text = rangeWork
 		)
 	)
 	on btn6 pressed do
