@@ -1,0 +1,7 @@
+Для установки макроскрипта скопировать файлы timeLineNavigator.ms, launcher_timeLineNavigator.mcr в папку 
+c:\Program Files\Autodesk\3ds Max 2018\MacroScripts\, 
+перезапустить макс , затем открыть меню Customize -> Customize User Interface. В зависимости от того хотите ли вы
+вынести скрипт на хоткей или на кнопку выбрать вкладку Keybord или Toolbars соответственно.
+Затем в выпадающем меню Category выбрать категорию Whalekit Scripts.
+Затем в появившемся списке выбрать timeLineNavigator и либо повесить его на хоткей в окне Hotkey либо дропнуть его
+на какой-нибудь тулбар. Если такого нет то создать его по кнопке New.
