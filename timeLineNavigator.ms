@@ -35,12 +35,15 @@ function createRanges = (
 )
 
 	
-function setRangeByRangeName rangeName = (
-    rangeStart_idx = findItem tags (rangeName + "_start")
+function setRangeByRangeName rangesSelected = (
+	rangeStart = rangesSelected[1]
+	rangeEnd = rangesSelected[rangesSelected.count]
+    rangeStart_idx = findItem tags (rangeStart + "_start")
 	rangeStart_id = FrameTagManager.GetTagID rangeStart_idx
-	rangeEnd_idx = findItem tags (rangeName + "_end")
+	rangeEnd_idx = findItem tags (rangeEnd + "_end")
 	rangeEnd_id = FrameTagManager.GetTagID rangeEnd_idx
 	animationRange = interval (FrameTagManager.GetTimeByID rangeStart_id) (FrameTagManager.GetTimeByID rangeEnd_id)
+	sliderTime = FrameTagManager.GetTimeByID rangeStart_id
 )
 
 function setAllAnimationRanges = (
@@ -87,48 +90,59 @@ function renameRange oldRangeName newRangeName = (
 	FrameTagManager.SetNameByID rangeEnd_id (newRangeName + "_end")
 )
 
-rollout win1 "Time line navigator" width:200 height:305
+rollout win1 "Time line navigator" width:200 height:505
 (
 	
-	dropdownList ddl1 "Animation ranges" pos:[10,8] width:180 height:40 items: (for range in ranges collect range)
-	button btn1 "Set selected range" pos:[10,55] width:180 height:20
-	button btn2 "Delete selected range" pos:[10,155] width:180 height:20
-	edittext edt1 "Enter range name" pos:[10,205] width:180 height:17 labelOnTop:true
-	button btn3 "Create new range" pos:[10,250] width:180 height:20
-	button btn4 "Redefine selected range" pos:[10,105] width:180 height:20
-	button btn5 "Rename selected range" pos:[10,275] width:180 height:20
-	button btn6 "Create animation ranges from tags" pos:[10,130] width:180 height:20
-	button btn7 "Delete all time tags" pos:[10,180] width:180 height:20
-	button btn8 "Set all animation ranges" pos:[10,80] width:180 height:20
+	multiListBox mlb "Animation ranges" items: (for range in ranges collect range) height: 15
+	button btn1 "Set selected ranges" pos:[10,255] width:180 height:20
+	button btn2 "Delete selected ranges" pos:[10,355] width:180 height:20
+	edittext edt1 "Enter range name" pos:[10,405] width:180 height:17 labelOnTop:true
+	button btn3 "Create new range" pos:[10,450] width:180 height:20
+	button btn4 "Redefine selected range" pos:[10,305] width:180 height:20
+	button btn5 "Rename selected range" pos:[10,475] width:180 height:20
+	button btn6 "Refresh ranges" pos:[10,330] width:180 height:20
+	button btn7 "Delete all time tags" pos:[10,380] width:180 height:20
+	button btn8 "Set all animation ranges" pos:[10,280] width:180 height:20
 	
-		
-	local rangeWork = ranges[1]
+	local rangesSelected = #()
 	local newRange = ""
 		
-	on ddl1 selected i do
+	on mlb selectionEnd do
 	(
-		rangeWork = ddl1.items[i]
-		edt1.text = rangeWork
+		rangesSelected = (for idx in mlb.selection collect ranges[idx])
+		if rangesSelected.count == 1 then
+			(
+			edt1.text = rangesSelected[1]
+			)
+			else
+			(
+			edt1.text = ""
+			)
 	)
+	on mlb doubleClicked i do
+	(
+		rangesSelected = #()
+		append rangesSelected ranges[i]
+		setRangeByRangeName rangesSelected
+		)
 	on btn1 pressed do
 	(
 		if ranges.count > 0 then
 		(
-			setRangeByRangeName rangeWork
-			rangeStart_idx = findItem tags (rangeWork + "_start")
-			rangeStart_id = FrameTagManager.GetTagID rangeStart_idx
-			sliderTime = FrameTagManager.GetTimeByID rangeStart_id
+			setRangeByRangeName rangesSelected
 		)
 	)
 	on btn2 pressed do
 	(
-		if ranges.count > 0 then 
+		if ranges.count > 0 and rangesSelected.count > 0 then 
 		(
-			deleteTagsByRangeName rangeWork 
+			for range in rangesSelected do
+			(
+			deleteTagsByRangeName range
 			createRanges()
-			ddl1.items = (for range in ranges collect range)
-			rangeWork = ranges[1]
-			ddl1.selection = 1
+			)
+			mlb.items = (for range in ranges collect range)
+			rangesSelected = (for idx in mlb.selection collect ranges[idx])
 		)
 	)
 	on edt1 entered txt do
@@ -140,40 +154,36 @@ rollout win1 "Time line navigator" width:200 height:305
 		if newRange != "" then
 		(
 			createTagsByRangeName newRange
-			rangeWork = newRange
-			newRange = ""
-			edt1.text = rangeWork
 			createRanges()
-			ddl1.items = (for range in ranges collect range)
+			mlb.items = (for range in ranges collect range)
+			edt1.text = ""
 		)
 	)
 	on btn4 pressed do
 	(
-		if ranges.count > 0 then
+		if ranges.count > 0 and rangesSelected.count == 1 then
 		(
-			redefineRange rangeWork
+			redefineRange rangesSelected[1]
 			createRanges()
-			ddl1.items = (for range in ranges collect range)
+			mlb.items = (for range in ranges collect range)
 		)
 	)
 	on btn5 pressed do
 	(
-		if ranges.count > 0 and newRange != "" then
+		if ranges.count > 0 and newRange != "" and rangesSelected.count == 1 then
 		(
-			renameRange rangeWork newRange
+			renameRange rangesSelected[1] newRange
 			createRanges()
-			rangeWork = newRange
-			ddl1.items = (for range in ranges collect range)
-			newRange = ""
-			edt1.text = rangeWork
+			rangesSelected[1] = newRange
+			mlb.items = (for range in ranges collect range)
+			edt1.text = ""
 		)
 	)
 	on btn6 pressed do
 	(
 		createRanges()
-		ddl1.items = (for range in ranges collect range)
-		rangeWork = ranges[1]
-		ddl1.selection = 1
+		mlb.items = (for range in ranges collect range)
+		mlb.selection = #{}
 	)
 	on btn7 pressed do
 	(
@@ -181,7 +191,7 @@ rollout win1 "Time line navigator" width:200 height:305
 		(
 			FrameTagManager.ResetFrameTags()
 			createRanges()
-			ddl1.items = (for range in ranges collect range)
+			mlb.items = (for range in ranges collect range)
 		)
 	)
 	on btn8 pressed do
