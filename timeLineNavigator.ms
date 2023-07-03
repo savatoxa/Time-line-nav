@@ -46,6 +46,30 @@ function setRangeByRangeName rangesSelected = (
 	sliderTime = FrameTagManager.GetTimeByID rangeStart_id
 )
 
+function SetLeftSlider = (
+	try(
+	animationRange = interval animationRange.start sliderTime
+	)catch()
+	)
+	
+function SetRightSlider = (
+	try(
+	animationRange = interval sliderTime animationRange.end
+	)catch()
+	)
+	
+function SetStartTime leftBorder = (
+	try(
+	animationRange = interval leftBorder animationRange.end
+	)catch()
+	)
+	
+function SetEndTime rightBorder = (
+	try(
+	animationRange = interval animationRange.start rightBorder
+	)catch()
+	)
+
 function setAllAnimationRanges = (
 	allTagFrames = #()
 	for tag_idx = 1 to tags.count do
@@ -92,17 +116,21 @@ function renameRange oldRangeName newRangeName = (
 
 rollout win1 "Time line navigator" width:200 height:505
 (
-	
+	---window width = 200
 	multiListBox mlb "Animation ranges" items: (for range in ranges collect range) height: 15
-	button btn1 "Set selected ranges" pos:[10,255] width:180 height:20
-	button btn2 "Delete selected ranges" pos:[10,355] width:180 height:20
-	edittext edt1 "Enter range name" pos:[10,405] width:180 height:17 labelOnTop:true
-	button btn3 "Create new range" pos:[10,450] width:180 height:20
-	button btn4 "Redefine selected range" pos:[10,305] width:180 height:20
-	button btn5 "Rename selected range" pos:[10,475] width:180 height:20
-	button btn6 "Refresh ranges" pos:[10,330] width:180 height:20
-	button btn7 "Delete all time tags" pos:[10,380] width:180 height:20
-	button btn8 "Set all animation ranges" pos:[10,280] width:180 height:20
+	button setSelRanges "Set selected ranges" pos:[10,225] width:180 height:20
+	button btn2 "Delete selected ranges" pos:[10,305] width:180 height:20
+	edittext edt1 "Enter range name" pos:[10,345] width:180 height:17 labelOnTop:true
+	button btn3 "Create new range" pos:[10,382] width:180 height:20
+	button btn4 "Redefine selected range" pos:[10,265] width:180 height:20
+	button btn5 "Rename selected range" pos:[10,402] width:180 height:20
+	button btn6 "Refresh ranges" pos:[10,285] width:180 height:20
+	button btn7 "Delete all time tags" pos:[10,325] width:180 height:20
+	button btn8 "Set all animation ranges" pos:[10,245] width:180 height:20
+	button leftSld "Left - slider" pos:[10, 425] width: 80 height: 20
+	button rightSld "Slider - right" pos:[110, 425] width: 80 height: 20
+	spinner startTime "Start:" range:[-10000,10000,0] type:#integer pos:[10, 445] width: 80 height: 17
+	spinner endTime "End:" range:[-10000,10000,0] type:#integer pos:[110, 445] width: 80 height: 17
 	
 	local rangesSelected = #()
 	local newRange = ""
@@ -124,12 +152,16 @@ rollout win1 "Time line navigator" width:200 height:505
 		rangesSelected = #()
 		append rangesSelected ranges[i]
 		setRangeByRangeName rangesSelected
+		startTime.value = animationRange.start
+		endTime.value = animationRange.end
 		)
-	on btn1 pressed do
+	on setSelRanges pressed do
 	(
 		if ranges.count > 0 then
 		(
 			setRangeByRangeName rangesSelected
+			startTime.value = animationRange.start
+			endTime.value = animationRange.end
 		)
 	)
 	on btn2 pressed do
@@ -201,6 +233,26 @@ rollout win1 "Time line navigator" width:200 height:505
 		setAllAnimationRanges()
 		)
 	)
+	on leftSld pressed do
+	(
+		SetLeftSlider()
+		)
+	on rightSld pressed do
+	(
+		SetRightSlider()
+		)
+	on startTime entered do
+	(
+		SetStartTime startTime.value
+		if startTime.value == 0 then 
+		(
+			sliderTime = 0
+			)
+		)
+	on endTime entered do
+	(
+		SetEndTime endTime.value
+		)
 )
 
 createRanges()
