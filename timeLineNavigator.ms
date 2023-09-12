@@ -3,7 +3,7 @@ ranges = #()
 
 function createTags = (
 tags = #()
-for i =1 to FrameTagManager.GetTagCount() do 
+for i =1 to FrameTagManager.GetTagCount() do
 (
 	id = FrameTagManager.GetTagID i
 	tag_name = FrameTagManager.GetNameByID id
@@ -34,16 +34,30 @@ function createRanges = (
 	)
 )
 
-	
+function setRangeByRange rangeName = (
+	rangeStart_id = FrameTagManager.GetTagID (findItem tags (rangeName + "_start"))
+	rangeEnd_id = FrameTagManager.GetTagID (findItem tags (rangeName + "_end"))
+	animationRange = interval (FrameTagManager.GetTimeByID rangeStart_id) (FrameTagManager.GetTimeByID rangeEnd_id)
+)
+
 function setRangeByRangeName rangesSelected = (
-	rangeStart = rangesSelected[1]
-	rangeEnd = rangesSelected[rangesSelected.count]
-    rangeStart_idx = findItem tags (rangeStart + "_start")
-	rangeStart_id = FrameTagManager.GetTagID rangeStart_idx
-	rangeEnd_idx = findItem tags (rangeEnd + "_end")
-	rangeEnd_id = FrameTagManager.GetTagID rangeEnd_idx
+	rangeStart_id = FrameTagManager.GetTagID (findItem tags (rangesSelected[1] + "_start"))
+	rangeEnd_id = FrameTagManager.GetTagID (findItem tags (rangesSelected[rangesSelected.count] + "_end"))
 	animationRange = interval (FrameTagManager.GetTimeByID rangeStart_id) (FrameTagManager.GetTimeByID rangeEnd_id)
 	sliderTime = FrameTagManager.GetTimeByID rangeStart_id
+)
+
+function setRangeByRangeNameAndSlider rangeName = (
+	rangeStartTime = FrameTagManager.GetTimeByID (FrameTagManager.GetTagID (findItem tags (rangeName + "_start")))
+	rangeEndTime = FrameTagManager.GetTimeByID (FrameTagManager.GetTagID (findItem tags (rangeName + "_end")))
+	if sliderTime > rangeStartTime then
+	(
+		animationRange = interval rangeStartTime sliderTime
+		)
+	else if sliderTime < rangeEndTime then
+	(
+		animationRange = interval sliderTime rangeEndTime
+		)
 )
 
 function SetLeftSlider = (
@@ -88,63 +102,91 @@ function createTagsByRangeName rangeName = (
 )
 
 function deleteTagsByRangeName rangeName = (
-	rangeStart_idx = findItem tags (rangeName + "_start")
-	rangeStart_id = FrameTagManager.GetTagID rangeStart_idx
-	rangeEnd_idx = findItem tags (rangeName + "_end")
-	rangeEnd_id = FrameTagManager.GetTagID rangeEnd_idx
+	rangeStart_id = FrameTagManager.GetTagID (findItem tags (rangeName + "_start"))
+	rangeEnd_id = FrameTagManager.GetTagID (findItem tags (rangeName + "_end"))
 	FrameTagManager.DeleteTag rangeStart_id
 	FrameTagManager.DeleteTag rangeEnd_id
 	)
 	
 function redefineRange rangeName = (
-	rangeStart_idx = findItem tags (rangeName + "_start")
-	rangeStart_id = FrameTagManager.GetTagID rangeStart_idx
-	rangeEnd_idx = findItem tags (rangeName + "_end")
-	rangeEnd_id = FrameTagManager.GetTagID rangeEnd_idx
+	rangeStart_id = FrameTagManager.GetTagID (findItem tags (rangeName + "_start"))
+	rangeEnd_id = FrameTagManager.GetTagID (findItem tags (rangeName + "_end"))
 	FrameTagManager.SetTimeByID rangeStart_id animationRange.start
 	FrameTagManager.SetTimeByID rangeEnd_id animationRange.end
 )
 
 function renameRange oldRangeName newRangeName = (
-	rangeStart_idx = findItem tags (oldRangeName + "_start")
-	rangeStart_id = FrameTagManager.GetTagID rangeStart_idx
-	rangeEnd_idx = findItem tags (oldRangeName + "_end")
-	rangeEnd_id = FrameTagManager.GetTagID rangeEnd_idx
+	rangeStart_id = FrameTagManager.GetTagID (findItem tags (oldRangeName + "_start"))
+	rangeEnd_id = FrameTagManager.GetTagID (findItem tags (oldRangeName + "_end"))
 	FrameTagManager.SetNameByID rangeStart_id (newRangeName + "_start")
 	FrameTagManager.SetNameByID rangeEnd_id (newRangeName + "_end")
 )
 
-rollout win1 "Time line navigator" width:200 height:505
+function ExportSelectedRanges exportpath filename rangesSelected = (
+	for range in rangesSelected do
+	(
+	setRangeByRange range
+	fileToExport = exportpath + "\\" + filename + "@" + range + ".fbx"
+	FBXExporterSetParam "Animation" true
+	FBXExporterSetParam "BakeAnimation" true
+	FBXExporterSetParam "Removesinglekeys"
+	exportFile fileToExport #noPrompt selectedOnly: true
+	)
+	)
+	
+function SetFileProperties exportpath filename = (
+	if filename != undefined then
+	(
+		fileProperties.addProperty #custom "filename" filename
+		)
+	if exportpath != undefined then
+	(
+		fileProperties.addProperty #custom "exportpath" exportpath
+		)
+)
+
+function GetFilePropertiesExportPath = (
+	return fileProperties.getPropertyValue #custom (fileProperties.findProperty #custom "exportpath")
+	)
+function GetFilePropertiesFileName = (
+	return fileProperties.getPropertyValue #custom (fileProperties.findProperty #custom "filename")
+	)
+
+rollout win1 "Time line navigator" width:200 height:560
 (
+	local rangesSelected = #()
+	local newRange = ""
+	
 	---window width = 200
 	multiListBox mlb "Animation ranges" items: (for range in ranges collect range) height: 15
 	button setSelRanges "Set selected ranges" pos:[10,225] width:180 height:20
-	button btn2 "Delete selected ranges" pos:[10,305] width:180 height:20
-	edittext edt1 "Enter range name" pos:[10,345] width:180 height:17 labelOnTop:true
-	button btn3 "Create new range" pos:[10,382] width:180 height:20
-	button btn4 "Redefine selected range" pos:[10,265] width:180 height:20
-	button btn5 "Rename selected range" pos:[10,402] width:180 height:20
-	button btn6 "Refresh ranges" pos:[10,285] width:180 height:20
-	button btn7 "Delete all time tags" pos:[10,325] width:180 height:20
-	button btn8 "Set all animation ranges" pos:[10,245] width:180 height:20
-	button leftSld "Left - slider" pos:[10, 425] width: 80 height: 20
-	button rightSld "Slider - right" pos:[110, 425] width: 80 height: 20
-	spinner startTime "Start:" range:[-10000,10000,0] type:#integer pos:[10, 445] width: 80 height: 17
-	spinner endTime "End:" range:[-10000,10000,0] type:#integer pos:[110, 445] width: 80 height: 17
+	button delSelRanges "Delete selected ranges" pos:[10,305] width:180 height:20
+	edittext entRngName "Enter range name" pos:[10,345] width:180 height:17 labelOnTop:true
+	button crtNewRng "Create new range" pos:[10,382] width:180 height:20
+	button rdfSelRng "Redefine selected range" pos:[10,265] width:180 height:20
+	button renSelRng "Rename selected range" pos:[10,402] width:180 height:20
+	button refresh "Refresh ranges" pos:[10,285] width:180 height:20
+	button delAllTags "Delete all time tags" pos:[10,325] width:180 height:20
+	button setAllRanges "Set all animation ranges" pos:[10,245] width:180 height:20
+	button leftSld "Left-Slider" pos:[10, 425] width: 60 height: 20
+	button rightSld "Slider-Right" pos:[130, 425] width: 60 height: 20
+	button rngSld "Rng-Slider" pos:[70, 425] width: 60 height: 20
+	spinner startTime "Start:" range:[-20000,20000,animationRange.start] type:#integer pos:[10, 445] width: 80 height: 17
+	spinner endTime "End:" range:[-20000,20000,animationRange.end] type:#integer pos:[110, 445] width: 80 height: 17
+	edittext exportpath "Export path" pos:[10,460] width: 180 height: 17 labelOnTop: true text: (GetFilePropertiesExportPath())
+	edittext filename "File prefix name" pos:[10,495] width: 180 height: 17 labelOnTop: true text: (GetFilePropertiesFileName())
+	button exportSel "Export selected ranges" pos:[10,532] width:180 height:20
 	
-	local rangesSelected = #()
-	local newRange = ""
-		
 	on mlb selectionEnd do
 	(
 		rangesSelected = (for idx in mlb.selection collect ranges[idx])
 		if rangesSelected.count == 1 then
 			(
-			edt1.text = rangesSelected[1]
+			entRngName.text = rangesSelected[1]
 			)
 			else
 			(
-			edt1.text = ""
+			entRngName.text = ""
 			)
 	)
 	on mlb doubleClicked i do
@@ -164,9 +206,9 @@ rollout win1 "Time line navigator" width:200 height:505
 			endTime.value = animationRange.end
 		)
 	)
-	on btn2 pressed do
+	on delSelRanges pressed do
 	(
-		if ranges.count > 0 and rangesSelected.count > 0 then 
+		if ranges.count > 0 and rangesSelected.count > 0 then
 		(
 			for range in rangesSelected do
 			(
@@ -177,21 +219,21 @@ rollout win1 "Time line navigator" width:200 height:505
 			rangesSelected = (for idx in mlb.selection collect ranges[idx])
 		)
 	)
-	on edt1 entered txt do
+	on entRngName entered txt do
 	(
 		newRange = txt
 	)
-	on btn3 pressed do
+	on crtNewRng pressed do
 	(
 		if newRange != "" then
 		(
 			createTagsByRangeName newRange
 			createRanges()
 			mlb.items = (for range in ranges collect range)
-			edt1.text = ""
+			entRngName.text = ""
 		)
 	)
-	on btn4 pressed do
+	on rdfSelRng pressed do
 	(
 		if ranges.count > 0 and rangesSelected.count == 1 then
 		(
@@ -200,7 +242,7 @@ rollout win1 "Time line navigator" width:200 height:505
 			mlb.items = (for range in ranges collect range)
 		)
 	)
-	on btn5 pressed do
+	on renSelRng pressed do
 	(
 		if ranges.count > 0 and newRange != "" and rangesSelected.count == 1 then
 		(
@@ -208,16 +250,18 @@ rollout win1 "Time line navigator" width:200 height:505
 			createRanges()
 			rangesSelected[1] = newRange
 			mlb.items = (for range in ranges collect range)
-			edt1.text = ""
+			entRngName.text = ""
 		)
 	)
-	on btn6 pressed do
+	on refresh pressed do
 	(
 		createRanges()
 		mlb.items = (for range in ranges collect range)
 		mlb.selection = #{}
+		startTime.value = animationRange.start
+		endTime.value = animationRange.end
 	)
-	on btn7 pressed do
+	on delAllTags pressed do
 	(
 		if queryBox "Delete all time tags ?" beep: True then
 		(
@@ -226,33 +270,61 @@ rollout win1 "Time line navigator" width:200 height:505
 			mlb.items = (for range in ranges collect range)
 		)
 	)
-	on btn8 pressed do
+	on setAllRanges pressed do
 	(
 		if tags.count > 0 then
 		(
 		setAllAnimationRanges()
 		)
+		startTime.value = animationRange.start
+		endTime.value = animationRange.end
 	)
 	on leftSld pressed do
 	(
 		SetLeftSlider()
+		startTime.value = animationRange.start
+		endTime.value = animationRange.end
 		)
 	on rightSld pressed do
 	(
 		SetRightSlider()
+		startTime.value = animationRange.start
+		endTime.value = animationRange.end
 		)
-	on startTime entered do
+	on rngSld pressed do
+	(
+		if rangesSelected.count == 1 then
+		(
+		setRangeByRangeNameAndSlider rangesSelected[1]
+		startTime.value = animationRange.start
+		endTime.value = animationRange.end
+		)
+		)
+	on startTime changed value do
 	(
 		SetStartTime startTime.value
-		if startTime.value == 0 then 
+		if startTime.value == 0 then
 		(
 			sliderTime = 0
 			)
 		)
-	on endTime entered do
+	on endTime changed value do
 	(
 		SetEndTime endTime.value
 		)
+	on exportpath changed text_ do
+	(
+		SetFileProperties exportpath.text filename.text
+		)
+	on filename_ changed text_ do
+	(
+		SetFileProperties exportpath.text filename.text
+		)
+	on exportSel pressed do
+	(
+		ExportSelectedRanges exportpath.text filename.text rangesSelected
+		)
+
 )
 
 createRanges()
